@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TCG Vault - Testnet Faucet</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Inter', sans-serif; background: #0a0e17; color: #e2e8f0;
+            min-height: 100vh; padding: 2rem 1rem;
+        }
+        .wrapper { max-width: 900px; margin: 0 auto; }
+        h1 { font-size: 1.8rem; text-align: center; margin-bottom: 0.25rem; }
+        h1 span { color: #3b82f6; }
+        .subtitle { text-align: center; color: #94a3b8; margin-bottom: 2rem; font-size: 0.95rem; }
+        .connect-box {
+            background: #111827; border: 1px solid #1e293b; border-radius: 14px;
+            padding: 1.25rem 1.5rem; text-align: center; margin-bottom: 2rem;
+        }
+        .connect-box .addr { font-family: monospace; color: #3b82f6; }
+        .badge {
+            display: inline-block; background: #facc15; color: #000; padding: 0.15rem 0.6rem;
+            border-radius: 20px; font-size: 0.7rem; font-weight: 700; margin-left: 0.5rem;
+        }
+        .connect-btn {
+            background: linear-gradient(135deg, #3b82f6, #6366f1); color: #fff; border: none;
+            padding: 0.7rem 2rem; border-radius: 10px; font-weight: 600; font-size: 0.95rem;
+            cursor: pointer; transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .connect-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 15px rgba(59,130,246,0.4); }
+        .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1.25rem; }
+        .card {
+            background: #111827; border: 1px solid #1e293b; border-radius: 14px;
+            padding: 1.75rem; text-align: center; transition: border-color 0.3s, transform 0.2s;
+        }
+        .card:hover { border-color: #3b82f6; transform: translateY(-2px); }
+        .card-icon { font-size: 2.5rem; margin-bottom: 0.75rem; }
+        .card h3 { font-size: 1.15rem; margin-bottom: 0.35rem; }
+        .card .addr-small { font-size: 0.65rem; color: #64748b; word-break: break-all; margin-bottom: 0.75rem; }
+        .balance { font-size: 1rem; font-weight: 600; color: #facc15; margin-bottom: 1.25rem; }
+        .amt-row { display: flex; align-items: center; gap: 0.5rem; justify-content: center; margin-bottom: 0.75rem; }
+        .amt-row input {
+            width: 110px; text-align: center; background: #1e293b; color: #e2e8f0;
+            border: 1px solid #334155; border-radius: 8px; padding: 0.45rem; font-size: 0.95rem; font-weight: 600;
+        }
+        .amt-row span { color: #94a3b8; font-size: 0.8rem; }
+        .mint-btn {
+            width: 100%; padding: 0.65rem; border-radius: 10px; border: none;
+            font-weight: 700; font-size: 0.95rem; cursor: pointer; transition: all 0.2s; color: #fff;
+        }
+        .mint-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 12px rgba(0,0,0,0.4); }
+        .mint-btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none; box-shadow: none; }
+        .mint-btn.usdc { background: linear-gradient(135deg, #2775ca, #3b8eed); }
+        .mint-btn.usdt { background: linear-gradient(135deg, #26a17b, #3cc29e); }
+        .mint-btn.vault { background: linear-gradient(135deg, #3b82f6, #6366f1); }
+        .status { margin-top: 0.6rem; font-size: 0.8rem; min-height: 1.1em; }
+        .status.success { color: #10b981; }
+        .status.error { color: #ef4444; }
+        .status.pending { color: #facc15; }
+        .tx-link { color: #3b82f6; text-decoration: underline; font-size: 0.75rem; word-break: break-all; }
+        .info {
+            background: rgba(59,130,246,0.08); border: 1px solid rgba(59,130,246,0.25);
+            border-radius: 12px; padding: 1.25rem; margin-top: 2rem; font-size: 0.85rem; color: #94a3b8;
+        }
+        .info h4 { color: #3b82f6; margin-bottom: 0.4rem; }
+        .info ul { padding-left: 1.2rem; margin: 0.4rem 0 0; }
+        .info li { margin-bottom: 0.25rem; }
+        .info a { color: #facc15; }
+        .footer { text-align: center; color: #475569; font-size: 0.75rem; margin-top: 3rem; }
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <h1><span>TCG Vault</span> Testnet Faucet</h1>
+        <p class="subtitle">Mint free test tokens on BSC Testnet</p>
+
+        <div class="connect-box" id="connectBox">
+            <button class="connect-btn" id="connectBtn" onclick="doConnect()">Connect Wallet</button>
+        </div>
+
+        <div class="grid">
+            <div class="card">
+                <div class="card-icon">💵</div>
+                <h3>Mock USDC</h3>
+                <div class="addr-small" id="usdcAddr">-</div>
+                <div class="balance">Balance: <span id="usdcBal">0.00</span></div>
+                <div class="amt-row">
+                    <input type="number" id="usdcAmt" value="1000" min="1" max="100000" step="100">
+                    <span>USDC</span>
+                </div>
+                <button class="mint-btn usdc" id="mintUsdc" onclick="mint('usdc')" disabled>Mint USDC</button>
+                <div class="status" id="usdcStatus"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">💴</div>
+                <h3>Mock USDT</h3>
+                <div class="addr-small" id="usdtAddr">-</div>
+                <div class="balance">Balance: <span id="usdtBal">0.00</span></div>
+                <div class="amt-row">
+                    <input type="number" id="usdtAmt" value="1000" min="1" max="100000" step="100">
+                    <span>USDT</span>
+                </div>
+                <button class="mint-btn usdt" id="mintUsdt" onclick="mint('usdt')" disabled>Mint USDT</button>
+                <div class="status" id="usdtStatus"></div>
+            </div>
+
+            <div class="card">
+                <div class="card-icon">🔷</div>
+                <h3>$VAULT Token</h3>
+                <div class="addr-small" id="vaultAddr">-</div>
+                <div class="balance">Balance: <span id="vaultBal">0.00</span></div>
+                <div class="amt-row">
+                    <input type="number" id="vaultAmt" value="500" min="1" max="10000" step="50">
+                    <span>VAULT</span>
+                </div>
+                <button class="mint-btn vault" id="mintVault" onclick="mint('vault')" disabled>Mint VAULT</button>
+                <div class="status" id="vaultStatus"></div>
+            </div>
+        </div>
+
+        <div class="info">
+            <h4>How to use</h4>
+            <ul>
+                <li>Connect MetaMask to <strong>BSC Testnet</strong> (chain 97)</li>
+                <li>Choose an amount and click <strong>Mint</strong></li>
+                <li>Need testnet BNB for gas? <a href="https://www.bnbchain.org/en/testnet-faucet" target="_blank">BNB Faucet</a></li>
+            </ul>
+        </div>
+        <div class="footer">TCG Vault Protocol &mdash; Internal Testing Tool</div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ethers@5.7.2/dist/ethers.umd.min.js"></script>
+    <script>
+    (function() {
+        const ERC20_ABI = [
+            "function balanceOf(address) view returns (uint256)",
+            "function mint(address, uint256)",
+            "function decimals() view returns (uint8)"
+        ];
+
+        let provider, signer, userAddr;
+        let tokens = {};
+
+        async function loadAddresses() {
+            try {
+                const r = await fetch('deployed-addresses.json');
+                return await r.json();
+            } catch(e) {
+                console.error('Failed to load addresses:', e);
+                return null;
+            }
+        }
+
+        async function switchToBSCTestnet() {
+            try {
+                await window.ethereum.request({ method: 'wallet_switchEthereumChain', params: [{ chainId: '0x61' }] });
+            } catch(e) {
+                if (e.code === 4902) {
+                    await window.ethereum.request({
+                        method: 'wallet_addEthereumChain',
+                        params: [{
+                            chainId: '0x61', chainName: 'BSC Testnet',
+                            nativeCurrency: { name: 'BNB', symbol: 'tBNB', decimals: 18 },
+                            rpcUrls: ['https://data-seed-prebsc-1-s1.binance.org:8545/'],
+                            blockExplorerUrls: ['https://testnet.bscscan.com']
+                        }]
+                    });
+                }
+            }
+        }
+
+        window.doConnect = async function() {
+            if (!window.ethereum) { alert('MetaMask not detected'); return; }
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
+                const net = await provider.getNetwork();
+                if (net.chainId !== 97) {
+                    await switchToBSCTestnet();
+                    provider = new ethers.providers.Web3Provider(window.ethereum, 'any');
+                }
+                signer = provider.getSigner();
+                userAddr = await signer.getAddress();
+
+                const addrs = await loadAddresses();
+                if (!addrs) { alert('Could not load contract addresses'); return; }
+
+                tokens.usdc = { contract: new ethers.Contract(addrs.usdc, ERC20_ABI, signer), address: addrs.usdc };
+                tokens.usdt = { contract: new ethers.Contract(addrs.usdt, ERC20_ABI, signer), address: addrs.usdt };
+                tokens.vault = { contract: new ethers.Contract(addrs.vaultToken, ERC20_ABI, signer), address: addrs.vaultToken };
+
+                document.getElementById('usdcAddr').textContent = addrs.usdc;
+                document.getElementById('usdtAddr').textContent = addrs.usdt;
+                document.getElementById('vaultAddr').textContent = addrs.vaultToken;
+
+                document.getElementById('connectBox').innerHTML =
+                    'Connected: <span class="addr">' + userAddr.slice(0,6) + '...' + userAddr.slice(-4) +
+                    '</span> <span class="badge">BSC Testnet</span>';
+
+                document.getElementById('mintUsdc').disabled = false;
+                document.getElementById('mintUsdt').disabled = false;
+                document.getElementById('mintVault').disabled = false;
+
+                await refreshAll();
+            } catch(e) { console.error(e); alert('Connection failed: ' + e.message); }
+        };
+
+        async function refreshAll() {
+            if (!userAddr) return;
+            for (const key of ['usdc','usdt','vault']) {
+                try {
+                    const bal = await tokens[key].contract.balanceOf(userAddr);
+                    document.getElementById(key + 'Bal').textContent = parseFloat(ethers.utils.formatEther(bal)).toLocaleString();
+                } catch(e) { console.error(key + ' balance error:', e); }
+            }
+        }
+
+        window.mint = async function(token) {
+            if (!userAddr) { alert('Connect wallet first'); return; }
+            const amtEl = document.getElementById(token + 'Amt');
+            const btn = document.getElementById('mint' + token.charAt(0).toUpperCase() + token.slice(1));
+            const statusEl = document.getElementById(token + 'Status');
+            const amount = parseFloat(amtEl.value);
+            if (!amount || amount <= 0) { statusEl.textContent = 'Enter a valid amount'; statusEl.className = 'status error'; return; }
+
+            const wei = ethers.utils.parseEther(amount.toString());
+            const label = btn.textContent;
+            btn.disabled = true;
+            btn.textContent = 'Minting...';
+            statusEl.textContent = 'Sending transaction...';
+            statusEl.className = 'status pending';
+
+            try {
+                const tx = await tokens[token].contract.mint(userAddr, wei, { gasLimit: 200000 });
+                statusEl.textContent = 'Confirming...';
+                await tx.wait();
+                statusEl.className = 'status success';
+                statusEl.innerHTML = 'Minted ' + amount.toLocaleString() + ' ' + token.toUpperCase() +
+                    '! <a href="https://testnet.bscscan.com/tx/' + tx.hash + '" target="_blank" class="tx-link">View tx</a>';
+                await refreshAll();
+            } catch(e) {
+                console.error('Mint error:', e);
+                let msg = 'Mint failed';
+                if (e.message && e.message.includes('Only authorized')) msg = 'Not authorized (owner only)';
+                else if (e.message && e.message.includes('user rejected')) msg = 'Transaction rejected';
+                else if (e.reason) msg = e.reason;
+                statusEl.textContent = msg;
+                statusEl.className = 'status error';
+            } finally {
+                btn.disabled = false;
+                btn.textContent = label;
+            }
+        };
+    })();
+    </script>
+</body>
+</html>
