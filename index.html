@@ -142,9 +142,15 @@
             "function mint(address, uint256)",
             "function decimals() view returns (uint8)"
         ];
+        const FAUCET_ABI = [
+            "function mintVault(uint256 amount)",
+            "function lastMint(address) view returns (uint256)",
+            "function COOLDOWN() view returns (uint256)"
+        ];
 
         let provider, signer, userAddr;
         let tokens = {};
+        let faucetContract;
 
         async function loadAddresses() {
             try {
@@ -193,6 +199,7 @@
                 tokens.usdc = { contract: new ethers.Contract(addrs.usdc, ERC20_ABI, signer), address: addrs.usdc };
                 tokens.usdt = { contract: new ethers.Contract(addrs.usdt, ERC20_ABI, signer), address: addrs.usdt };
                 tokens.vault = { contract: new ethers.Contract(addrs.vaultToken, ERC20_ABI, signer), address: addrs.vaultToken };
+                faucetContract = new ethers.Contract(addrs.faucet, FAUCET_ABI, signer);
 
                 document.getElementById('usdcAddr').textContent = addrs.usdc;
                 document.getElementById('usdtAddr').textContent = addrs.usdt;
@@ -236,7 +243,12 @@
             statusEl.className = 'status pending';
 
             try {
-                const tx = await tokens[token].contract.mint(userAddr, wei, { gasLimit: 200000 });
+                let tx;
+                if (token === 'vault') {
+                    tx = await faucetContract.mintVault(wei, { gasLimit: 300000 });
+                } else {
+                    tx = await tokens[token].contract.mint(userAddr, wei, { gasLimit: 200000 });
+                }
                 statusEl.textContent = 'Confirming...';
                 await tx.wait();
                 statusEl.className = 'status success';
